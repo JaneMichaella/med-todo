@@ -17,9 +17,13 @@ interface AppStore {
   medicines: Medicine[];
   dailyChecklist: DailyChecklistItem[];
   currentDate: string;
+  currentView: 'checklist' | 'management'; // 当前页面视图
   isFormOpen: boolean;
   editingMedicineId: string | null;
   isLoading: boolean;
+
+  // 视图切换
+  setView: (view: 'checklist' | 'management') => void;
 
   // 药物管理
   loadMedicines: () => Promise<void>;
@@ -53,9 +57,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
   medicines: [],
   dailyChecklist: [],
   currentDate: getCurrentDate(),
+  currentView: 'checklist',
   isFormOpen: false,
   editingMedicineId: null,
   isLoading: false,
+
+  // 切换视图
+  setView: (view) => {
+    set({ currentView: view });
+  },
 
   // 加载药物
   loadMedicines: async () => {

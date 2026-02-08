@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
 import { Header } from './components/Header';
 import { MedicineList } from './components/MedicineList';
+import { MedicineManagement } from './components/MedicineManagement';
 import { AddButton } from './components/AddButton';
 import { MedicineForm } from './components/MedicineForm';
 import { useDailyReset } from './hooks/useDailyReset';
@@ -12,6 +12,7 @@ function App() {
   useDailyReset();
 
   const isLoading = useAppStore(state => state.isLoading);
+  const currentView = useAppStore(state => state.currentView);
 
   if (isLoading) {
     return (
@@ -34,7 +35,7 @@ function App() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Header />
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        <MedicineList />
+        {currentView === 'checklist' ? <MedicineList /> : <MedicineManagement />}
       </div>
       <AddButton />
       <MedicineForm />
