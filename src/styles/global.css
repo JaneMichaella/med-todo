@@ -1,0 +1,96 @@
+/* 全局样式 - Global Styles */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family:
+    'PingFang SC',        /* iOS, macOS */
+    'Microsoft YaHei',    /* Windows */
+    'Noto Sans SC',       /* Android */
+    'Source Han Sans SC', /* Fallback */
+    sans-serif;
+
+  font-size: 18px;        /* 较大字体，适合老年人 */
+  line-height: 1.6;
+  color: #111827;
+  background-color: #f9fafb;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+}
+
+/* 确保中文字符正确渲染 */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 移除按钮的默认样式 */
+button {
+  font-family: inherit;
+}
+
+/* 输入框的样式 */
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* 确保应用占据全屏 */
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 滚动条样式（可选） */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* 高对比度，适合老年人 */
+@media (prefers-contrast: high) {
+  body {
+    font-weight: 500;
+  }
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  body {
+    font-size: 18px;
+  }
+}
+
+/* 禁用文本选择（在触摸设备上更好的体验） */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
