@@ -8,6 +8,7 @@ import {
 } from '../services/medicineService';
 import {
   checkAndResetDaily,
+  resetDailyChecklist,
   updateChecklistItem as updateChecklistItemService,
 } from '../services/checklistService';
 import { getCurrentDate } from '../utils/dateUtils';
@@ -77,21 +78,30 @@ export const useAppStore = create<AppStore>((set, get) => ({
   addMedicine: async medicine => {
     await addMedicineService(medicine);
     await get().loadMedicines();
-    await get().loadChecklist(); // 重新生成清单
+    // 强制重新生成清单（因为药物列表改变了）
+    const { medicines, currentDate } = get();
+    const checklist = await resetDailyChecklist(currentDate, medicines);
+    set({ dailyChecklist: checklist });
   },
 
   // 更新药物
   updateMedicine: async (id, updates) => {
     await updateMedicineService(id, updates);
     await get().loadMedicines();
-    await get().loadChecklist(); // 重新生成清单
+    // 强制重新生成清单（因为药物列表改变了）
+    const { medicines, currentDate } = get();
+    const checklist = await resetDailyChecklist(currentDate, medicines);
+    set({ dailyChecklist: checklist });
   },
 
   // 删除药物
   deleteMedicine: async id => {
     await deleteMedicineService(id);
     await get().loadMedicines();
-    await get().loadChecklist(); // 重新生成清单
+    // 强制重新生成清单（因为药物列表改变了）
+    const { medicines, currentDate } = get();
+    const checklist = await resetDailyChecklist(currentDate, medicines);
+    set({ dailyChecklist: checklist });
   },
 
   // 加载清单（包括每日重置检查）
