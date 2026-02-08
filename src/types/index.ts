@@ -1,12 +1,11 @@
 // 药物时段类型
-export type Timing = 'morning' | 'afternoon' | 'evening' | 'all';
+export type Timing = 'morning' | 'afternoon' | 'evening';
 
 // 药物定义
 export interface Medicine {
   id: string;              // UUID
   name: string;            // 药物名称 (中文)
-  timing: Timing;          // 服用时段
-  frequencyPerDay: number; // 每天次数 (1-3)
+  timings: Timing[];       // 服用时段 (可多选，决定每天次数)
   pillsPerDose: number;    // 每次片数
   appearance?: string;     // 药片外观描述 (optional)
   createdAt: string;       // ISO date

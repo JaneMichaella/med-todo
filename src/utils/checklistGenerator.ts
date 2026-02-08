@@ -1,31 +1,8 @@
-import { type Medicine, type DailyChecklistItem, type Timing } from '../types';
+import { type Medicine, type DailyChecklistItem } from '../types';
 
 /**
  * 清单生成器 - 从药物定义生成每日清单
  */
-
-// 根据药物配置获取时段列表
-function getTimingsForMedicine(medicine: Medicine): ('morning' | 'afternoon' | 'evening')[] {
-  if (medicine.timing === 'all') {
-    // 根据每天次数分配时段
-    if (medicine.frequencyPerDay === 1) {
-      return ['morning'];
-    } else if (medicine.frequencyPerDay === 2) {
-      return ['morning', 'evening'];
-    } else {
-      return ['morning', 'afternoon', 'evening'];
-    }
-  } else {
-    // 指定时段，按频率重复
-    const timings: ('morning' | 'afternoon' | 'evening')[] = [];
-    const baseTiming = medicine.timing as 'morning' | 'afternoon' | 'evening';
-
-    for (let i = 0; i < medicine.frequencyPerDay; i++) {
-      timings.push(baseTiming);
-    }
-    return timings;
-  }
-}
 
 // 生成每日清单
 export function generateDailyChecklist(
@@ -39,9 +16,8 @@ export function generateDailyChecklist(
       return; // 跳过未激活的药物
     }
 
-    const timings = getTimingsForMedicine(medicine);
-
-    timings.forEach((timing, index) => {
+    // 为每个选定的时段创建一个清单项
+    medicine.timings.forEach((timing, index) => {
       checklist.push({
         medicineId: medicine.id,
         date,

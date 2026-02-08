@@ -13,8 +13,7 @@ export function MedicineForm() {
   const closeForm = useAppStore(state => state.closeForm);
 
   const [name, setName] = useState('');
-  const [timing, setTiming] = useState<Timing>('morning');
-  const [frequencyPerDay, setFrequencyPerDay] = useState(1);
+  const [timings, setTimings] = useState<Timing[]>(['morning']);
   const [pillsPerDose, setPillsPerDose] = useState(1);
   const [appearance, setAppearance] = useState('');
 
@@ -24,20 +23,32 @@ export function MedicineForm() {
       const medicine = medicines.find(m => m.id === editingMedicineId);
       if (medicine) {
         setName(medicine.name);
-        setTiming(medicine.timing);
-        setFrequencyPerDay(medicine.frequencyPerDay);
+        setTimings(medicine.timings);
         setPillsPerDose(medicine.pillsPerDose);
         setAppearance(medicine.appearance || '');
       }
     } else {
       // 重置表单
       setName('');
-      setTiming('morning');
-      setFrequencyPerDay(1);
+      setTimings(['morning']);
       setPillsPerDose(1);
       setAppearance('');
     }
   }, [editingMedicineId, medicines]);
+
+  const toggleTiming = (timing: Timing) => {
+    if (timings.includes(timing)) {
+      // 移除
+      if (timings.length > 1) {
+        setTimings(timings.filter(t => t !== timing));
+      } else {
+        alert('至少需要选择一个服用时段');
+      }
+    } else {
+      // 添加
+      setTimings([...timings, timing]);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,8 +58,8 @@ export function MedicineForm() {
       return;
     }
 
-    if (frequencyPerDay < 1 || frequencyPerDay > 3) {
-      alert(texts.validation.invalidFrequency);
+    if (timings.length === 0) {
+      alert('请至少选择一个服用时段');
       return;
     }
 
@@ -59,8 +70,7 @@ export function MedicineForm() {
 
     const medicineData = {
       name: name.trim(),
-      timing,
-      frequencyPerDay,
+      timings,
       pillsPerDose,
       appearance: appearance.trim() || undefined,
     };
@@ -159,8 +169,11 @@ export function MedicineForm() {
             >
               {texts.form.timing} <span style={{ color: 'red' }}>*</span>
             </label>
+            <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '12px' }}>
+              可多选，每选一个时段表示每天服用一次
+            </div>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              {(['morning', 'afternoon', 'evening', 'all'] as Timing[]).map(t => (
+              {(['morning', 'afternoon', 'evening'] as Timing[]).map(t => (
                 <label
                   key={t}
                   style={{
@@ -170,55 +183,23 @@ export function MedicineForm() {
                     cursor: 'pointer',
                     padding: '8px 16px',
                     border: '2px solid',
-                    borderColor: timing === t ? '#3b82f6' : '#d1d5db',
+                    borderColor: timings.includes(t) ? '#3b82f6' : '#d1d5db',
                     borderRadius: '8px',
-                    backgroundColor: timing === t ? '#eff6ff' : 'white',
+                    backgroundColor: timings.includes(t) ? '#eff6ff' : 'white',
                   }}
                 >
                   <input
-                    type="radio"
-                    name="timing"
-                    value={t}
-                    checked={timing === t}
-                    onChange={e => setTiming(e.target.value as Timing)}
+                    type="checkbox"
+                    checked={timings.includes(t)}
+                    onChange={() => toggleTiming(t)}
                     style={{ width: '20px', height: '20px' }}
                   />
                   <span style={{ fontSize: '16px' }}>
-                    {t === 'all' ? texts.timings.all : texts.timings[t]}
+                    {texts.timings[t]}
                   </span>
                 </label>
               ))}
             </div>
-          </div>
-
-          {/* 每天次数 */}
-          <div style={{ marginBottom: '20px' }}>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-              }}
-            >
-              {texts.form.frequency} <span style={{ color: 'red' }}>*</span>
-            </label>
-            <select
-              value={frequencyPerDay}
-              onChange={e => setFrequencyPerDay(parseInt(e.target.value))}
-              style={{
-                width: '100%',
-                padding: '12px',
-                fontSize: '16px',
-                border: '2px solid #d1d5db',
-                borderRadius: '8px',
-                boxSizing: 'border-box',
-              }}
-            >
-              <option value={1}>1次</option>
-              <option value={2}>2次</option>
-              <option value={3}>3次</option>
-            </select>
           </div>
 
           {/* 每次片数 */}
