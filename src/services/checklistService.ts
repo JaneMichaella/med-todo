@@ -97,7 +97,10 @@ export async function addChecklistForNewMedicine(
   date: string,
   medicine: Medicine
 ): Promise<DailyChecklistItem[]> {
-  const existingChecklist = await getChecklist(date);
+  // 获取所有日期的清单
+  const allChecklists = await getStorageItem<DailyChecklistItem[]>(STORAGE_KEYS.CHECKLIST) || [];
+  const todayItems = allChecklists.filter(item => item.date === date);
+  const otherDaysItems = allChecklists.filter(item => item.date !== date);
 
   // 为新药物生成清单项
   const newItems: DailyChecklistItem[] = medicine.timings.map((timing, index) => ({
@@ -108,10 +111,12 @@ export async function addChecklistForNewMedicine(
     completed: false,
   }));
 
-  // 合并现有清单和新清单项
-  const updatedChecklist = [...existingChecklist, ...newItems];
-  await saveChecklist(updatedChecklist);
-  return updatedChecklist;
+  // 合并：其他日期的清单 + 今天现有的清单 + 新药物的清单项
+  const updatedAllChecklists = [...otherDaysItems, ...todayItems, ...newItems];
+  await setStorageItem(STORAGE_KEYS.CHECKLIST, updatedAllChecklists);
+
+  // 返回今天的清单
+  return [...todayItems, ...newItems];
 }
 
 // 智能更新清单：删除药物后
@@ -119,15 +124,19 @@ export async function removeChecklistForMedicine(
   date: string,
   medicineId: string
 ): Promise<DailyChecklistItem[]> {
-  const existingChecklist = await getChecklist(date);
+  // 获取所有日期的清单
+  const allChecklists = await getStorageItem<DailyChecklistItem[]>(STORAGE_KEYS.CHECKLIST) || [];
+  const otherDaysItems = allChecklists.filter(item => item.date !== date);
+  const todayItems = allChecklists.filter(item => item.date === date);
 
-  // 移除该药物的所有清单项
-  const updatedChecklist = existingChecklist.filter(
-    item => item.medicineId !== medicineId
-  );
+  // 移除该药物的所有清单项（只在今天的清单中）
+  const updatedTodayItems = todayItems.filter(item => item.medicineId !== medicineId);
 
-  await saveChecklist(updatedChecklist);
-  return updatedChecklist;
+  // 合并：其他日期的清单 + 今天更新后的清单
+  const updatedAllChecklists = [...otherDaysItems, ...updatedTodayItems];
+  await setStorageItem(STORAGE_KEYS.CHECKLIST, updatedAllChecklists);
+
+  return updatedTodayItems;
 }
 
 // 智能更新清单：修改药物后
@@ -135,24 +144,26 @@ export async function updateChecklistForMedicine(
   date: string,
   medicine: Medicine
 ): Promise<DailyChecklistItem[]> {
-  const existingChecklist = await getChecklist(date);
+  // 获取所有日期的清单
+  const allChecklists = await getStorageItem<DailyChecklistItem[]>(STORAGE_KEYS.CHECKLIST) || [];
+  const otherDaysItems = allChecklists.filter(item => item.date !== date);
+  const todayItems = allChecklists.filter(item => item.date === date);
 
-  // 找出该药物的现有清单项
-  const oldItems = existingChecklist.filter(item => item.medicineId === medicine.id);
-  const otherItems = existingChecklist.filter(item => item.medicineId !== medicine.id);
+  // 找出该药物的现有清单项（今天的）
+  const oldItems = todayItems.filter(item => item.medicineId === medicine.id);
+  const otherMedicinesItems = todayItems.filter(item => item.medicineId !== medicine.id);
 
   // 生成新的清单项（根据更新后的timings）
   const newItems: DailyChecklistItem[] = medicine.timings.map((timing, index) => {
-    // 尝试找到匹配的旧记录（同样的timing和instanceIndex）
-    const matchingOldItem = oldItems.find(
-      old => old.timing === timing && old.instanceIndex === index
-    );
+    // 尝试找到匹配的旧记录（同样的timing）
+    // 注意：这里不能用 instanceIndex 匹配，因为 instanceIndex 会随着数组顺序变化
+    const matchingOldItem = oldItems.find(old => old.timing === timing);
 
     if (matchingOldItem) {
-      // 保留旧记录的完成状态
+      // 保留旧记录的完成状态，但更新 instanceIndex
       return {
         ...matchingOldItem,
-        // 药物信息可能改变了，但保留完成状态
+        instanceIndex: index, // 更新 instanceIndex 为新的顺序
       };
     } else {
       // 新增的时段，创建新记录
@@ -166,8 +177,10 @@ export async function updateChecklistForMedicine(
     }
   });
 
-  // 合并其他药物的清单项和更新后的清单项
-  const updatedChecklist = [...otherItems, ...newItems];
-  await saveChecklist(updatedChecklist);
-  return updatedChecklist;
+  // 合并：其他日期的清单 + 今天其他药物的清单 + 更新后的该药物清单
+  const updatedAllChecklists = [...otherDaysItems, ...otherMedicinesItems, ...newItems];
+  await setStorageItem(STORAGE_KEYS.CHECKLIST, updatedAllChecklists);
+
+  // 返回今天的清单
+  return [...otherMedicinesItems, ...newItems];
 }
