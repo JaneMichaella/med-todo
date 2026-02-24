@@ -91,3 +91,83 @@ export async function checkAndResetDaily(
     return await getChecklist(today);
   }
 }
+
+// 智能更新清单：添加新药物后
+export async function addChecklistForNewMedicine(
+  date: string,
+  medicine: Medicine
+): Promise<DailyChecklistItem[]> {
+  const existingChecklist = await getChecklist(date);
+
+  // 为新药物生成清单项
+  const newItems: DailyChecklistItem[] = medicine.timings.map((timing, index) => ({
+    medicineId: medicine.id,
+    date,
+    timing,
+    instanceIndex: index,
+    completed: false,
+  }));
+
+  // 合并现有清单和新清单项
+  const updatedChecklist = [...existingChecklist, ...newItems];
+  await saveChecklist(updatedChecklist);
+  return updatedChecklist;
+}
+
+// 智能更新清单：删除药物后
+export async function removeChecklistForMedicine(
+  date: string,
+  medicineId: string
+): Promise<DailyChecklistItem[]> {
+  const existingChecklist = await getChecklist(date);
+
+  // 移除该药物的所有清单项
+  const updatedChecklist = existingChecklist.filter(
+    item => item.medicineId !== medicineId
+  );
+
+  await saveChecklist(updatedChecklist);
+  return updatedChecklist;
+}
+
+// 智能更新清单：修改药物后
+export async function updateChecklistForMedicine(
+  date: string,
+  medicine: Medicine
+): Promise<DailyChecklistItem[]> {
+  const existingChecklist = await getChecklist(date);
+
+  // 找出该药物的现有清单项
+  const oldItems = existingChecklist.filter(item => item.medicineId === medicine.id);
+  const otherItems = existingChecklist.filter(item => item.medicineId !== medicine.id);
+
+  // 生成新的清单项（根据更新后的timings）
+  const newItems: DailyChecklistItem[] = medicine.timings.map((timing, index) => {
+    // 尝试找到匹配的旧记录（同样的timing和instanceIndex）
+    const matchingOldItem = oldItems.find(
+      old => old.timing === timing && old.instanceIndex === index
+    );
+
+    if (matchingOldItem) {
+      // 保留旧记录的完成状态
+      return {
+        ...matchingOldItem,
+        // 药物信息可能改变了，但保留完成状态
+      };
+    } else {
+      // 新增的时段，创建新记录
+      return {
+        medicineId: medicine.id,
+        date,
+        timing,
+        instanceIndex: index,
+        completed: false,
+      };
+    }
+  });
+
+  // 合并其他药物的清单项和更新后的清单项
+  const updatedChecklist = [...otherItems, ...newItems];
+  await saveChecklist(updatedChecklist);
+  return updatedChecklist;
+}

@@ -14,7 +14,7 @@ export function MedicineForm() {
 
   const [name, setName] = useState('');
   const [timings, setTimings] = useState<Timing[]>(['morning']);
-  const [pillsPerDose, setPillsPerDose] = useState(1);
+  const [pillsPerDose, setPillsPerDose] = useState(''); // 改为字符串，支持空值
   const [appearance, setAppearance] = useState('');
 
   // 加载编辑的药物数据
@@ -24,14 +24,14 @@ export function MedicineForm() {
       if (medicine) {
         setName(medicine.name);
         setTimings(medicine.timings);
-        setPillsPerDose(medicine.pillsPerDose);
+        setPillsPerDose(medicine.pillsPerDose.toString());
         setAppearance(medicine.appearance || '');
       }
     } else {
       // 重置表单
       setName('');
       setTimings(['morning']);
-      setPillsPerDose(1);
+      setPillsPerDose(''); // 默认为空
       setAppearance('');
     }
   }, [editingMedicineId, medicines]);
@@ -63,7 +63,14 @@ export function MedicineForm() {
       return;
     }
 
-    if (pillsPerDose < 1) {
+    // 检查片数是否已填写
+    if (!pillsPerDose || pillsPerDose.trim() === '') {
+      alert('请输入每次片数');
+      return;
+    }
+
+    const pillsCount = parseInt(pillsPerDose);
+    if (isNaN(pillsCount) || pillsCount < 1) {
       alert(texts.validation.invalidPillCount);
       return;
     }
@@ -71,7 +78,7 @@ export function MedicineForm() {
     const medicineData = {
       name: name.trim(),
       timings,
-      pillsPerDose,
+      pillsPerDose: pillsCount,
       appearance: appearance.trim() || undefined,
     };
 
@@ -218,7 +225,8 @@ export function MedicineForm() {
               type="number"
               min="1"
               value={pillsPerDose}
-              onChange={e => setPillsPerDose(parseInt(e.target.value) || 1)}
+              onChange={e => setPillsPerDose(e.target.value)}
+              placeholder="请输入片数"
               style={{
                 width: '100%',
                 padding: '12px',

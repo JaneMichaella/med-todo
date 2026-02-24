@@ -8,7 +8,9 @@ import {
 } from '../services/medicineService';
 import {
   checkAndResetDaily,
-  resetDailyChecklist,
+  addChecklistForNewMedicine,
+  updateChecklistForMedicine,
+  removeChecklistForMedicine,
   updateChecklistItem as updateChecklistItemService,
 } from '../services/checklistService';
 import { getCurrentDate } from '../utils/dateUtils';
@@ -76,11 +78,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   // 添加药物
   addMedicine: async medicine => {
-    await addMedicineService(medicine);
+    const newMedicine = await addMedicineService(medicine);
     await get().loadMedicines();
-    // 强制重新生成清单（因为药物列表改变了）
-    const { medicines, currentDate } = get();
-    const checklist = await resetDailyChecklist(currentDate, medicines);
+    // 智能添加清单项（保留其他药物的记录）
+    const { currentDate } = get();
+    const checklist = await addChecklistForNewMedicine(currentDate, newMedicine);
     set({ dailyChecklist: checklist });
   },
 
@@ -88,19 +90,22 @@ export const useAppStore = create<AppStore>((set, get) => ({
   updateMedicine: async (id, updates) => {
     await updateMedicineService(id, updates);
     await get().loadMedicines();
-    // 强制重新生成清单（因为药物列表改变了）
+    // 智能更新清单项（保留已完成的记录）
     const { medicines, currentDate } = get();
-    const checklist = await resetDailyChecklist(currentDate, medicines);
-    set({ dailyChecklist: checklist });
+    const updatedMedicine = medicines.find(m => m.id === id);
+    if (updatedMedicine) {
+      const checklist = await updateChecklistForMedicine(currentDate, updatedMedicine);
+      set({ dailyChecklist: checklist });
+    }
   },
 
   // 删除药物
   deleteMedicine: async id => {
     await deleteMedicineService(id);
     await get().loadMedicines();
-    // 强制重新生成清单（因为药物列表改变了）
-    const { medicines, currentDate } = get();
-    const checklist = await resetDailyChecklist(currentDate, medicines);
+    // 智能删除清单项（只删除该药物的记录）
+    const { currentDate } = get();
+    const checklist = await removeChecklistForMedicine(currentDate, id);
     set({ dailyChecklist: checklist });
   },
 
