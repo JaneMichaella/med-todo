@@ -27,3 +27,7 @@ dist-ssr
 android/
 ios/
 .capacitor/
+
+*.md
+!README.md
+打包APK说明.md
